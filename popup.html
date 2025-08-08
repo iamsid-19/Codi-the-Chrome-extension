@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Codii- The Leetcode Grind</title>
+  <link rel="stylesheet" href="public/style.css">
+</head>
+
+<body>
+  
+  <div class="main-content">
+    <h1 id="welcomeMsg">Welcome to codii</h1>
+    <div class="timer-display">
+    <span id="countdown">00:00:00</span>
+  </div>
+    <form>
+      <label for="totalQues">
+        Select Number of Challenges you want to conquer today!
+      </label>
+      <select name="totalQues-dropdown" id="totalQues" required>
+        <option value="">--Select--</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+
+      <div class="difficulty-section">
+        <input type="checkbox" name="difficulty" value="Easy" id="easy">
+        <label for="easy">Easy</label>
+        <input type="checkbox" name="difficulty" value="Medium" id="medium">
+        <label for="medium">Medium</label>
+        <input type="checkbox" name="difficulty" value="Hard" id="hard">
+        <label for="hard">Hard</label>
+      </div>
+
+      <label for="timer">
+        Select the time of Grind
+      </label>
+      <select name="timer-dropdown" id="timer" required>
+        <option value="">--Select--</option>
+        <option value="1">one hour</option>
+        <option value="2">two hour</option>
+        <option value="3">three hour</option>
+      </select>
+      <div class="btn">
+        <button type="button" id="start">Start Challenge</button>
+        <button type="button" id="stop">stop</button>
+      </div>
+
+    </form>
+
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+
+</html>
