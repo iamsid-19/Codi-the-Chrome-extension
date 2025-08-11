@@ -4,11 +4,16 @@ const startBtn = document.querySelector('#start')
 const countdown = document.querySelector('#countdown')
 const stopBtn = document.querySelector('#stop')
 const welcomeMsg = document.querySelector('#welcomeMsg')
-const timerDisplay =document.querySelector('.timer-display')
+const timerDisplay = document.querySelector('.timer-display')
 let isChallengeStart = false;
 let timerInterval;
 
-
+function resetUI() {
+  isChallengeStart=false
+  welcomeMsg.style.display = 'block';
+  timerDisplay.style.display = 'none';
+  stopBtn.style.display = 'none';
+}
 function handlingTimer(timerInSec) {
 
   if (timerInterval) {
@@ -27,9 +32,11 @@ function handlingTimer(timerInSec) {
     })
     if (currentTimerInSec <= 0) {
       clearInterval(timerInterval)
+      
       chrome.storage.local.remove('timerInSec');
       countdown.textContent = "00:00:00";
       alert("Time's up !")
+      resetUI();
       return;
     } else {
       currentTimerInSec--;
@@ -40,40 +47,45 @@ function handlingTimer(timerInSec) {
 
 }
 startBtn.addEventListener('click', () => {
-  const checkboxes = document.querySelectorAll('input[name="difficulty"]:checked')
-  const selected = [];
-  if (!isChallengeStart) {
-    isChallengeStart = true;
-    welcomeMsg.style.display = 'none';
-    timerDisplay.style.display = 'block'
-    stopBtn.style.display='block'
-  }
-  else {
-    isChallengeRunning = false;
-    welcomeMsg.style.display = 'block';
-    timerDisplay.style.display = 'none';
-     stopBtn.style.display='none'
-  }
-  checkboxes.forEach(checkbox => selected.push(checkbox.value))
-  const questions = numOfQues.value;
-
-  //timer logic below
   const timerValue = timer.value;
   const timerInHrs = parseInt(timerValue, 10)
   if (isNaN(timerInHrs) || timerInHrs === 0) {
     alert("please select the timer")
     return;
   }
+
+  if (isChallengeStart) {
+    alert("A challenge is already running!")
+    return;
+  }
+  const checkboxes = document.querySelectorAll('input[name="difficulty"]:checked')
+  const selected = [];
+  checkboxes.forEach(checkbox => selected.push(checkbox.value))
+  const questions = numOfQues.value;
   let timerInSec = timerValue * 3600;
   handlingTimer(timerInSec)
-
-
+  isChallengeStart = true;
+  welcomeMsg.style.display = 'none';
+  timerDisplay.style.display = 'block'
+  stopBtn.style.display = 'block'
+  chrome.storage.local.set({
+    selected: selected,
+    totalQuestions: questions,
+    timerInitialValue: timerInHrs
+  })
 })
 document.addEventListener('DOMContentLoaded', () => {
   chrome.storage.local.get(['timerInSec'], (data) => {
     if (data.timerInSec) {
       handlingTimer(data.timerInSec)
+      isChallengeStart = true;
+      welcomeMsg.style.display = 'none';
+      timerDisplay.style.display = 'block';
+      stopBtn.style.display = 'block';
 
+    }
+    else {
+      resetUI();
     }
   })
 })
@@ -81,4 +93,6 @@ stopBtn.addEventListener('click', () => {
   clearInterval(timerInterval);
   chrome.storage.local.remove('timerInSec')
   countdown.textContent = "00:00:00";
+  resetUI();
+
 })
