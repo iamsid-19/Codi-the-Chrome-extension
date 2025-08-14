@@ -1,12 +1,23 @@
 {
     "manifest_version": 3,
     "name": "Codii",
-    "version": "0.0.1",
+    "version": "1.0",
     "description": "Codii- The Leetcode Grinder",
     "action": {
         "default_popup": "./popup.html"
     },
     "permissions": [
-        "storage"
+        "storage",
+        "tabs"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "https://leetcode.com/problems/*"
+            ],
+            "js": [
+                "content.js"
+            ]
+        }
     ]
 }

@@ -1,3 +1,6 @@
+import { problems } from "./problems"
+
+
 const numOfQues = document.getElementById('totalQues')
 const timer = document.querySelector('#timer')
 const startBtn = document.querySelector('#start')
@@ -73,6 +76,7 @@ startBtn.addEventListener('click', () => {
     totalQuestions: questions,
     timerInitialValue: timerInHrs
   })
+  chrome.tabs.create({url:"https://leetcode.com/problemset/"})
 })
 document.addEventListener('DOMContentLoaded', () => {
   chrome.storage.local.get(['timerInSec'], (data) => {
@@ -95,4 +99,10 @@ stopBtn.addEventListener('click', () => {
   countdown.textContent = "00:00:00";
   resetUI();
 
+})
+chrome.runtime.onMessage.addListener((message,sender,sendResponse)=>{
+  if((message.action==="startChallenge"))
+  {
+    console.log("Received message from LeetCode page to start the timer!");
+  }
 })
