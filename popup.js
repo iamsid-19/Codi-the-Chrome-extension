@@ -17,6 +17,39 @@ function resetUI() {
   timerDisplay.style.display = 'none';
   stopBtn.style.display = 'none';
 }
+function getRandomUrl(difficulty,questions)
+{
+  const url =[];
+  for(let i=0;i<questions;i++)
+  {
+    let data = ""; let index="";
+    if(difficulty=="easy")
+    {
+      index = "easy"
+      data = problems.easy;
+    }
+    if(difficulty=="medium")
+    {
+      index = "medium";
+      data = problems.medium;
+    }
+    if(difficulty=="hard")
+    {
+      index = "hard";
+      data = problems.hard;
+    }
+    
+    if(difficulty== data)
+    {
+       const dataLen = data.length;
+      const link = data[Math.floor(Math.random()*dataLen)]
+      url.push(link);
+    }
+    
+     
+  }
+  return url;
+}
 function handlingTimer(timerInSec) {
 
   if (timerInterval) {
@@ -63,8 +96,9 @@ startBtn.addEventListener('click', () => {
   }
   const checkboxes = document.querySelectorAll('input[name="difficulty"]:checked')
   const selected = [];
-  checkboxes.forEach(checkbox => selected.push(checkbox.value))
-  const questions = numOfQues.value;
+  checkboxes.forEach(checkbox => selected.push(checkbox.value));
+  const difficulty = selected[0].toLowerCase();
+  const questions = parseInt(numOfQues.value,10);
   let timerInSec = timerValue * 3600;
   handlingTimer(timerInSec)
   isChallengeStart = true;
@@ -76,7 +110,16 @@ startBtn.addEventListener('click', () => {
     totalQuestions: questions,
     timerInitialValue: timerInHrs
   })
+  const problemsUrl  = getRandomUrl(difficulty,questions);
+  if(questions>0)
+  {
+    problemsUrl.forEach(problem =>{
+      chrome.tabs.create({url:problem})
+    })
+  }
+
   chrome.tabs.create({url:"https://leetcode.com/problemset/"})
+  
 })
 document.addEventListener('DOMContentLoaded', () => {
   chrome.storage.local.get(['timerInSec'], (data) => {
