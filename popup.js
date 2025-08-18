@@ -1,4 +1,4 @@
-import { problems } from "./problems"
+
 
 
 const numOfQues = document.getElementById('totalQues')
@@ -12,43 +12,21 @@ let isChallengeStart = false;
 let timerInterval;
 
 function resetUI() {
-  isChallengeStart=false
+  isChallengeStart = false
   welcomeMsg.style.display = 'block';
   timerDisplay.style.display = 'none';
   stopBtn.style.display = 'none';
 }
-function getRandomUrl(difficulty,questions)
-{
-  const url =[];
-  for(let i=0;i<questions;i++)
-  {
-    let data = ""; let index="";
-    if(difficulty=="easy")
-    {
-      index = "easy"
-      data = problems.easy;
-    }
-    if(difficulty=="medium")
-    {
-      index = "medium";
-      data = problems.medium;
-    }
-    if(difficulty=="hard")
-    {
-      index = "hard";
-      data = problems.hard;
-    }
-    
-    if(difficulty== data)
-    {
-       const dataLen = data.length;
-      const link = data[Math.floor(Math.random()*dataLen)]
-      url.push(link);
-    }
-    
-     
+function getRandomUrl(allProblems, questions) {
+  let urls = [];
+  let tempArr = [...allProblems];
+  for (let i = 0; i < questions; i++) {
+    let index = Math.floor(Math.random() * tempArr.length);
+    urls.push(tempArr[index]);
+    tempArr.splice(index, 1);
   }
-  return url;
+  return urls;
+
 }
 function handlingTimer(timerInSec) {
 
@@ -68,7 +46,7 @@ function handlingTimer(timerInSec) {
     })
     if (currentTimerInSec <= 0) {
       clearInterval(timerInterval)
-      
+
       chrome.storage.local.remove('timerInSec');
       countdown.textContent = "00:00:00";
       alert("Time's up !")
@@ -97,8 +75,28 @@ startBtn.addEventListener('click', () => {
   const checkboxes = document.querySelectorAll('input[name="difficulty"]:checked')
   const selected = [];
   checkboxes.forEach(checkbox => selected.push(checkbox.value));
-  const difficulty = selected[0].toLowerCase();
-  const questions = parseInt(numOfQues.value,10);
+  if (selected.length === 0) {
+        alert("Please select a difficulty.");
+        return;
+    }
+
+  let allProblems =[];
+  selected.forEach(difficulty=>{
+    let key = difficulty.toLowerCase();
+    
+    if(problems[key])
+    {
+       allProblems =allProblems.concat(problems[key])
+    }
+  })
+    const questions = parseInt(numOfQues.value, 10);
+  const problemsUrl = getRandomUrl(allProblems, questions);
+  if (problemsUrl.length === 0) {
+    // Stop the function and tell the user what went wrong
+    alert("Not enough problems found for your selections. Please try again with a different number or difficulty.");
+    return; 
+}
+
   let timerInSec = timerValue * 3600;
   handlingTimer(timerInSec)
   isChallengeStart = true;
@@ -110,16 +108,14 @@ startBtn.addEventListener('click', () => {
     totalQuestions: questions,
     timerInitialValue: timerInHrs
   })
-  const problemsUrl  = getRandomUrl(difficulty,questions);
-  if(questions>0)
-  {
-    problemsUrl.forEach(problem =>{
-      chrome.tabs.create({url:problem})
+
+  if (questions > 0) {
+    problemsUrl.forEach(problem => {
+      chrome.tabs.create({ url: problem })
     })
   }
 
-  chrome.tabs.create({url:"https://leetcode.com/problemset/"})
-  
+
 })
 document.addEventListener('DOMContentLoaded', () => {
   chrome.storage.local.get(['timerInSec'], (data) => {
@@ -143,9 +139,8 @@ stopBtn.addEventListener('click', () => {
   resetUI();
 
 })
-chrome.runtime.onMessage.addListener((message,sender,sendResponse)=>{
-  if((message.action==="startChallenge"))
-  {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if ((message.action === "startChallenge")) {
     console.log("Received message from LeetCode page to start the timer!");
   }
 })
