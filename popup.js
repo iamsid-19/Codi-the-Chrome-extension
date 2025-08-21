@@ -82,8 +82,11 @@ startBtn.addEventListener('click', () => {
 
   let allProblems =[];
   selected.forEach(difficulty=>{
-    let key = difficulty.toLowerCase();
     
+    let key = difficulty.toLowerCase()
+     console.log("The current key is:", key);
+    console.log("The problems for this key are:", problems[key]);
+
     if(problems[key])
     {
        allProblems =allProblems.concat(problems[key])
