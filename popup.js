@@ -1,149 +1,134 @@
 
 
 
-const numOfQues = document.getElementById('totalQues')
-const timer = document.querySelector('#timer')
-const startBtn = document.querySelector('#start')
-const countdown = document.querySelector('#countdown')
-const stopBtn = document.querySelector('#stop')
-const welcomeMsg = document.querySelector('#welcomeMsg')
-const timerDisplay = document.querySelector('.timer-display')
-let isChallengeStart = false;
-let timerInterval;
+  const numOfQues = document.getElementById('totalQues')
+  const timer = document.querySelector('#timer')
+  const startBtn = document.querySelector('#start')
+  const countdown = document.querySelector('#countdown')
+  const stopBtn = document.querySelector('#stop')
+  const welcomeMsg = document.querySelector('#welcomeMsg')
+  const timerDisplay = document.querySelector('.timer-display')
 
-function resetUI() {
-  isChallengeStart = false
-  welcomeMsg.style.display = 'block';
-  timerDisplay.style.display = 'none';
-  stopBtn.style.display = 'none';
-}
-function getRandomUrl(allProblems, questions) {
-  let urls = [];
-  let tempArr = [...allProblems];
-  for (let i = 0; i < questions; i++) {
-    let index = Math.floor(Math.random() * tempArr.length);
-    urls.push(tempArr[index]);
-    tempArr.splice(index, 1);
-  }
-  return urls;
+  let timerInterval;
 
-}
-function handlingTimer(timerInSec) {
-
-  if (timerInterval) {
-    clearInterval(timerInterval)
-  }
-  let currentTimerInSec = timerInSec;
-  const updateTimer = () => {
-    const hours = Math.floor(currentTimerInSec / 3600);
-    const mins = Math.floor((currentTimerInSec % 3600) / 60);
-    const secs = currentTimerInSec % 60;
-    const formattedTime = String(hours).padStart(2, '0') + ':' + String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
-    countdown.textContent = formattedTime
-
-    chrome.storage.local.set({
-      timerInSec: currentTimerInSec
-    })
-    if (currentTimerInSec <= 0) {
-      clearInterval(timerInterval)
-
-      chrome.storage.local.remove('timerInSec');
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === "updateUI") {
+      countdown.textContent = message.time;
+    }
+    if (message.action === "timerDone") {
       countdown.textContent = "00:00:00";
-      alert("Time's up !")
+      alert("Time's up !");
       resetUI();
+    }
+  });
+  function resetUI() {
+    welcomeMsg.style.display = 'block';
+    timerDisplay.style.display = 'none';
+    stopBtn.style.display = 'none';
+  }
+  function getRandomUrl(allProblems, questions) {
+    let urls = [];
+    let tempArr = [...allProblems];
+    for (let i = 0; i < questions; i++) {
+      let index = Math.floor(Math.random() * tempArr.length);
+      urls.push(tempArr[index]);
+      tempArr.splice(index, 1);
+    }
+    return urls;
+
+
+  }
+
+
+  startBtn.addEventListener('click', () => {
+    const timerValue = timer.value;
+    const timerInHrs = parseInt(timerValue, 10)
+    if (isNaN(timerInHrs) || timerInHrs === 0) {
+      alert("please select the timer")
       return;
-    } else {
-      currentTimerInSec--;
     }
-  }
-  updateTimer(); // Call the function immediately to show the initial time
-  timerInterval = setInterval(updateTimer, 1000)
-
-}
-startBtn.addEventListener('click', () => {
-  const timerValue = timer.value;
-  const timerInHrs = parseInt(timerValue, 10)
-  if (isNaN(timerInHrs) || timerInHrs === 0) {
-    alert("please select the timer")
-    return;
-  }
-
-  if (isChallengeStart) {
-    alert("A challenge is already running!")
-    return;
-  }
-  const checkboxes = document.querySelectorAll('input[name="difficulty"]:checked')
-  const selected = [];
-  checkboxes.forEach(checkbox => selected.push(checkbox.value));
-  if (selected.length === 0) {
-        alert("Please select a difficulty.");
-        return;
-    }
-
-  let allProblems =[];
-  selected.forEach(difficulty=>{
-    
-    let key = difficulty.toLowerCase()
-     console.log("The current key is:", key);
-    console.log("The problems for this key are:", problems[key]);
-
-    if(problems[key])
-    {
-       allProblems =allProblems.concat(problems[key])
-    }
-  })
     const questions = parseInt(numOfQues.value, 10);
-  const problemsUrl = getRandomUrl(allProblems, questions);
-  if (problemsUrl.length === 0) {
-    // Stop the function and tell the user what went wrong
-    alert("Not enough problems found for your selections. Please try again with a different number or difficulty.");
-    return; 
-}
+    if (isNaN(questions) || questions === 0) {
+      alert("Please select the number of challenges.");
+      return;
+    }
 
-  let timerInSec = timerValue * 3600;
-  handlingTimer(timerInSec)
-  isChallengeStart = true;
-  welcomeMsg.style.display = 'none';
-  timerDisplay.style.display = 'block'
-  stopBtn.style.display = 'block'
-  chrome.storage.local.set({
-    selected: selected,
-    totalQuestions: questions,
-    timerInitialValue: timerInHrs
-  })
-
-  if (questions > 0) {
-    problemsUrl.forEach(problem => {
-      chrome.tabs.create({ url: problem })
+    chrome.storage.local.get(['timerInSec'], (data) => {
+      if (data.timerInSec) {
+        alert("A challenge is already running!");
+        return;
+      }
     })
-  }
 
-
-})
-document.addEventListener('DOMContentLoaded', () => {
-  chrome.storage.local.get(['timerInSec'], (data) => {
-    if (data.timerInSec) {
-      handlingTimer(data.timerInSec)
-      isChallengeStart = true;
-      welcomeMsg.style.display = 'none';
-      timerDisplay.style.display = 'block';
-      stopBtn.style.display = 'block';
-
+    const checkboxes = document.querySelectorAll('input[name="difficulty"]:checked')
+    const selected = [];
+    checkboxes.forEach(checkbox => selected.push(checkbox.value));
+    if (selected.length === 0) {
+      alert("Please select a difficulty.");
+      return;
     }
-    else {
-      resetUI();
+
+    let allProblems = [];
+    selected.forEach(difficulty => {
+
+      let key = difficulty.toLowerCase()
+      if (problems[key]) {
+        allProblems = allProblems.concat(problems[key])
+      }
+    })
+
+    const problemsUrl = getRandomUrl(allProblems, questions);
+    if (problemsUrl.length === 0) {
+      alert("Not enough problems found for your selections.");
+      return;
     }
+
+    let timerInSec = timerValue * 3600;
+    chrome.runtime.sendMessage({
+      action: "timerStarted",
+      timerInSec: timerInSec
+    })
+    welcomeMsg.style.display = 'none';
+    timerDisplay.style.display = 'block'
+    stopBtn.style.display = 'block'
+    chrome.storage.local.set({
+      selected: selected,
+      totalQuestions: questions,
+      timerInitialValue: timerInHrs
+    })
+
+    if (questions > 0) {
+      problemsUrl.forEach(problem => {
+        chrome.tabs.create({ url: problem })
+      })
+    }
+
+
   })
-})
-stopBtn.addEventListener('click', () => {
-  clearInterval(timerInterval);
-  chrome.storage.local.remove('timerInSec')
-  countdown.textContent = "00:00:00";
-  resetUI();
+  document.addEventListener('DOMContentLoaded', () => {
+    chrome.storage.local.get(['timerInSec'], (data) => {
+      if (data.timerInSec) {
+        welcomeMsg.style.display = 'none';
+        timerDisplay.style.display = 'block';
+        stopBtn.style.display = 'block';
+        chrome.runtime.sendMessage({
+          action: "timerStarted",
+          timerInSec: data.timerInSec
+        })
 
-})
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if ((message.action === "startChallenge")) {
-    console.log("Received message from LeetCode page to start the timer!");
-  }
-})
+      }
+      else {
+        resetUI();
+      }
+    })
+  })
+  stopBtn.addEventListener('click', () => {
+    chrome.runtime.sendMessage({
+      action: "stopTimmer"
+    })
+    chrome.storage.local.remove('timerInSec')
+    countdown.textContent = "00:00:00";
+    resetUI();
+
+  })
+
