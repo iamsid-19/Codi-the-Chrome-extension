@@ -21,6 +21,25 @@
       resetUI();
     }
   });
+  // Reflect storage changes when popup is open (e.g., if background updates while popup hidden)
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.timerInSec) {
+      const seconds = changes.timerInSec.newValue;
+      if (typeof seconds === 'number') {
+        const hours = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        const formattedTime = String(hours).padStart(2, '0') + ':' + String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+        countdown.textContent = formattedTime;
+        welcomeMsg.style.display = 'none';
+        timerDisplay.style.display = 'block';
+        stopBtn.style.display = 'block';
+      } else {
+        // timer removed
+        resetUI();
+      }
+    }
+  });
   function resetUI() {
     welcomeMsg.style.display = 'block';
     timerDisplay.style.display = 'none';
@@ -106,21 +125,26 @@
 
   })
   document.addEventListener('DOMContentLoaded', () => {
-    chrome.storage.local.get(['timerInSec'], (data) => {
-      if (data.timerInSec) {
+    // Ask background for current timer state without restarting it
+    chrome.runtime.sendMessage({ action: 'getTimerState' }, (resp) => {
+      if (resp && resp.running && resp.seconds > 0) {
+        countdown.textContent = resp.formattedTime || '00:00:00';
         welcomeMsg.style.display = 'none';
         timerDisplay.style.display = 'block';
         stopBtn.style.display = 'block';
-        chrome.runtime.sendMessage({
-          action: "timerStarted",
-          timerInSec: data.timerInSec
+      } else {
+        // Fallback check in case background not yet initialized response
+        chrome.storage.local.get(['timerInSec'], (data) => {
+          if (data.timerInSec) {
+            welcomeMsg.style.display = 'none';
+            timerDisplay.style.display = 'block';
+            stopBtn.style.display = 'block';
+          } else {
+            resetUI();
+          }
         })
-
       }
-      else {
-        resetUI();
-      }
-    })
+    });
   })
   stopBtn.addEventListener('click', () => {
     chrome.runtime.sendMessage({
