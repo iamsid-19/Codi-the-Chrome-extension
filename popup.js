@@ -20,6 +20,10 @@ chrome.runtime.onMessage.addListener((message) => {
     alert("Time's up !");
     resetUI();
   }
+  if (message.action === "resetUI") {
+    countdown.textContent = "00:00:00";
+    resetUI();
+  }
 });
 // chrome.runtime.onMessage.addListener((message)=>{
 //   if(message.action === "timerPaused")
@@ -85,55 +89,82 @@ startBtn.addEventListener('click', () => {
       alert("A challenge is already running!");
       return;
     }
-  })
-
-  const checkboxes = document.querySelectorAll('input[name="difficulty"]:checked')
-  const selected = [];
-  checkboxes.forEach(checkbox => selected.push(checkbox.value));
-  if (selected.length === 0) {
-    alert("Please select a difficulty.");
-    return;
-  }
-
-  let allProblems = [];
-  selected.forEach(difficulty => {
-
-    let key = difficulty.toLowerCase()
-    if (problems[key]) {
-      allProblems = allProblems.concat(problems[key])
+    const checkboxes = document.querySelectorAll('input[name="difficulty"]:checked')
+    const selected = [];
+    checkboxes.forEach(checkbox => selected.push(checkbox.value));
+    if (selected.length === 0) {
+      alert("Please select a difficulty.");
+      return;
     }
-  })
 
-  const problemsUrl = getRandomUrl(allProblems, questions);
-  if (problemsUrl.length === 0) {
-    alert("Not enough problems found for your selections.");
-    return;
-  }
-  if (questions < 3 && selected.length === 1 && selected[0] === 'easy' && timerInHrs !== 1) {
-    alert('slected questions must be done in 1 hours');
-    return;
-  }
-  if (questions > 0) {
+    let allProblems = [];
+    selected.forEach(difficulty => {
 
-    problemsUrl.forEach(problem => {
-      chrome.tabs.create({ url: problem })
+      let key = difficulty.toLowerCase()
+      if (problems[key]) {
+        allProblems = allProblems.concat(problems[key])
+      }
     })
-  }
 
-  let timerInSec = timerValue * 3600;
-  chrome.runtime.sendMessage({
-    action: "timerStarted",
-    timerInSec: timerInSec
-  })
-  welcomeMsg.style.display = 'none';
-  timerDisplay.style.display = 'block'
-  stopBtn.style.display = 'block'
-  chrome.storage.local.set({
-    selected: selected,
-    totalQuestions: questions,
-    timerInitialValue: timerInHrs
-  })
+    const problemsUrl = getRandomUrl(allProblems, questions);
+    if (problemsUrl.length === 0) {
+      alert("Not enough problems found for your selections.");
+      return;
+    }
+    //easy
+    if (questions < 3 && selected.length === 1 && selected[0].toLowerCase() === 'easy' && timerInHrs !== 1) {
+      alert('For 1 or 2 easy questions, the timer must be 1 hour.');
+      return;
+    }
+    if (questions === 3 && selected.length === 1 && selected[0].toLowerCase() === 'easy' && timerInHrs > 2) {
+      alert('For 3 easy questions, the timer cannot be more than 2 hours.');
+      return;
+    }
 
+    // Medium Logic
+    if (questions <= 2 && selected.length === 1 && selected[0].toLowerCase() === 'medium' && timerInHrs < 2) {
+      alert('For 1 or 2 medium questions, the timer must be 2 or more hours.');
+      return;
+    }
+    if (questions >= 3 && selected.length === 1 && selected[0].toLowerCase() === 'medium' && timerInHrs < 3) {
+      alert('For 3 or more medium questions, the timer must be 3 or more hours.');
+      return;
+    }
+
+    // Hard Logic
+    if (questions === 1 && selected.length === 1 && selected[0].toLowerCase() === 'hard' && timerInHrs !== 1) {
+      alert('For 1 hard question, the timer must be exactly 1 hour.');
+      return;
+    }
+    if (questions >= 2 && selected.length === 1 && selected[0].toLowerCase() === 'hard' && timerInHrs < 3) {
+      alert('For 2 or more hard questions, the timer must be 3 or more hours.');
+      return;
+    }
+    //number of url tabs
+    if (questions > 0) {
+
+      problemsUrl.forEach(problem => {
+        chrome.tabs.create({ url: problem })
+      })
+    }
+
+    let timerInSec = timerValue * 3600;
+    chrome.runtime.sendMessage({
+      action: "timerStarted",
+      timerInSec: timerInSec
+    })
+    welcomeMsg.style.display = 'none';
+    timerDisplay.style.display = 'block'
+    stopBtn.style.display = 'block'
+    chrome.storage.local.set({
+      selected: selected,
+      totalQuestions: questions,
+      timerInitialValue: timerInHrs
+    })
+
+
+
+  })
 
 
 
@@ -156,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const secs = seconds % 60;
           const formattedTime = String(hours).padStart(2, '0') + ':' + String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
 
-          countdown.textContent = formattedTime;  
+          countdown.textContent = formattedTime;
           welcomeMsg.style.display = 'none';
           timerDisplay.style.display = 'block';
           stopBtn.style.display = 'block';
@@ -167,13 +198,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 })
-stopBtn.addEventListener('click', () => {
-  chrome.runtime.sendMessage({
+
+
+//stopBtnn event
+stopBtn.addEventListener('click',  () => {
+   chrome.runtime.sendMessage({
     action: "stopTimer"
   })
-  chrome.storage.local.remove('timerInSec')
-  countdown.textContent = "00:00:00";
-  resetUI();
+
 
 })
 

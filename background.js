@@ -37,6 +37,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     clearInterval(timerInterval);
     currentTimerInSecGlobal = null;
     chrome.storage.local.remove('timerInSec');
+    chrome.runtime.sendMessage({action:"resetUI"})
+  
   }
   if (message.action === "getTimerState") {
     const seconds = typeof currentTimerInSecGlobal === 'number' ? currentTimerInSecGlobal : 0;
