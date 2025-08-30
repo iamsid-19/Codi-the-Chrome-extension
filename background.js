@@ -8,9 +8,9 @@ let currentTimerInSecGlobal = null;
 //   {
 //     return;
 //   }
-  
+
 //   let tab = await chrome.tabs.get(activeInfo.tabId)
-  
+
 //   if (tab.url && !tab.url.includes('https://leetcode.com/problems/')) {
 //     clearInterval(timerInterval);
 //     chrome.runtime.sendMessage({
@@ -37,8 +37,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     clearInterval(timerInterval);
     currentTimerInSecGlobal = null;
     chrome.storage.local.remove('timerInSec');
-    chrome.runtime.sendMessage({action:"resetUI"})
-  
+    try {
+      chrome.runtime.sendMessage({ action: "resetUI" })
+    } catch (error) {
+      console.log("Popup closed, UI will reset when reopened");
+    }
+
   }
   if (message.action === "getTimerState") {
     const seconds = typeof currentTimerInSecGlobal === 'number' ? currentTimerInSecGlobal : 0;
@@ -70,15 +74,15 @@ function handlingTimer(timerInSec) {
     const mins = Math.floor((currentTimerInSec % 3600) / 60);
     const secs = currentTimerInSec % 60;
     const formattedTime = String(hours).padStart(2, '0') + ':' + String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
-    try{
-    chrome.runtime.sendMessage({
-      action: "updateUI",
-      time: formattedTime
-    })
-  }
-  catch(error){
-    console.log("Popup closed, timer continues in background");
-  }
+    try {
+      chrome.runtime.sendMessage({
+        action: "updateUI",
+        time: formattedTime
+      })
+    }
+    catch (error) {
+      console.log("Popup closed, timer continues in background");
+    }
 
     currentTimerInSecGlobal = currentTimerInSec;
     chrome.storage.local.set({
@@ -89,7 +93,11 @@ function handlingTimer(timerInSec) {
       timerInterval = null;
 
       chrome.storage.local.remove('timerInSec');
-      chrome.runtime.sendMessage({ action: "timerDone" })
+      try {
+        chrome.runtime.sendMessage({ action: "timerDone" })
+      } catch (error) {
+        console.log("Popup closed, timer completed in background");
+      }
     } else {
       currentTimerInSec--;
     }

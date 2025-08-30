@@ -9,8 +9,6 @@ const stopBtn = document.querySelector('#stop')
 const welcomeMsg = document.querySelector('#welcomeMsg')
 const timerDisplay = document.querySelector('.timer-display')
 
-let timerInterval;
-
 chrome.runtime.onMessage.addListener((message) => {
   if (message.action === "updateUI") {
     countdown.textContent = message.time;
@@ -201,11 +199,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 //stopBtnn event
-stopBtn.addEventListener('click',  () => {
+stopBtn.addEventListener('click', () => {
    chrome.runtime.sendMessage({
     action: "stopTimer"
   })
-
-
+   
+   
+   countdown.textContent = "00:00:00";
+   resetUI();
 })
 
